@@ -4,40 +4,49 @@ open FParsec
 open Types
 open Common
 
-let builtInTypes = ["int"; "float"; "string"; "list"]
 
-let customType =
-    let isAsciiIdStart    = fun c -> isAsciiUpper c 
-    let isAsciiIdContinue = fun c -> isAsciiLetter c || isDigit c || c = '_'
+let typeExpression, typeExpressionRef = createParserForwardedToRef()
 
-    identifier (IdentifierOptions(
-                    isAsciiIdStart = isAsciiIdStart,
-                    isAsciiIdContinue = isAsciiIdContinue,
-                    normalization = System.Text.NormalizationForm.FormKC,
-                    normalizeBeforeValidation = true,
-                    allowAllNonAsciiCharsInPreCheck = true)) |>> CustomType
+let objectFieldParser =
+  choice [
+    sepByOp ":" commonIdentifier typeExpression
+    |>> (fun (name, typeExpression) -> ObjectField.mk (Some name) typeExpression)
+    typeExpression |>> (ObjectField.mk None)
+  ]
 
-let builtInType = choice (builtInTypes |> List.map pstring) |>> BuiltInType
+let objectTupleParser =
+    (sepBySemis1 objectFieldParser)
+    |>> ObjectTuple
 
-let typeName = spaces >>. choice [customType; builtInType] .>> spaces
+let typeCall = 
+  (typeExpression .>> spaces) .>>. (typeExpression .>> spaces)
+  |>> TypeCall
 
-let high = OperatorPrecedenceParser<TypeExpression, unit, UserState>()
-let low = OperatorPrecedenceParser<TypeExpression, unit, UserState>()
-let pHighExpr = high.ExpressionParser .>> spaces
-let pLowExpr: Parser<_, UserState> = low.ExpressionParser .>> spaces
+let tag =
+  pstring "#" >>. commonIdentifier |>> Tag
 
-high.TermParser <-
-  choice
-    [ typeName
-      pstring "()" |>> fun _ -> Unit
-      between (str "(") (str ")") pLowExpr ]
 
-low.TermParser <-
-  many1 pHighExpr |>> (function [f] -> f | fs -> List.reduce (fun f g -> TypeCall(f, g)) fs) .>> spaces
+let atom = spaced <| choice [
+  typeIdentifier |>> Identifier
+  //(separatedByCommas objectFieldParser) |>> (fun x -> ObjectTuple x)
+  tag
+]
 
-low.AddOperator(InfixOperator("|", spaces, 10, Associativity.Left, fun f g -> Union(f, g)))
-high.AddOperator(InfixOperator("&", spaces, 20, Associativity.Left, fun f g -> Intersection(f, g)))
-high.AddOperator(InfixOperator("->", spaces, 20, Associativity.Left, fun f g -> FunctionType(f, g)))
-high.AddOperator(InfixOperator(",", spaces, 20, Associativity.Left, fun a b -> Tuple([a; b])))
+// let crossop =
+//     pstring "*" >>% (fun x y -> ObjectTuple [x; y])
 
-let typeExpression: Parser<_, UserState> = pLowExpr
+let ops = choice [
+    //crossop
+    pstring "|" >>% (fun x y -> Union (x, y))
+    pstring "&" >>% (fun x y -> Intersection (x, y))
+    pstring "->" >>% (fun x y -> FunctionType (x, y))
+]
+
+let term = choice [
+    attempt <| (spaced <| (pchar '(' .>> spaces .>> pchar ')') |>> (fun _ -> Unit))
+    attempt <| (spaced <| parens objectTupleParser)
+    attempt <| (spaced <| parens (spaced typeExpression))
+    atom
+]
+
+do typeExpressionRef.Value <- chainl1 term ops

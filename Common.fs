@@ -5,20 +5,28 @@ open Types
 
 let tabStopDistance = 8 // must be a power of 2
 
-let betweenBrackets p = between (pchar '(' .>> spaces) (spaces >>. pchar ')') p
+let builtInTypes = ["int"; "float"; "string"; "list"]
 
-let separatedByCommas p = sepBy p (spaces >>. pchar ',' .>> spaces)
+let parens p = between (pchar '(' .>> spaces) (spaces >>. pchar ')') p
+
+let spaced p = spaces >>. p .>> spaces
+
+let sepByOp op p p' = p .>> spaces .>> pstring op .>> spaces .>>. p'
+
+let sepByCommas p = sepBy p (spaces >>. pchar ',' .>> spaces)
+
+let sepBySemis1 p = sepBy1 p (spaces >>. pchar ';' .>> spaces)
 
 let isBlank = function
     | ' ' | '\t' -> true
     | _ -> false
 
-let comment: Parser<_, UserState> = pstring "--" >>. skipRestOfLine false
+let comment: Parser<_, IndentationState> = pstring "--" >>. skipRestOfLine false
 
 let wsBeforeEOL = skipManySatisfy isBlank >>. optional comment
 
-type CharStream = CharStream<UserState>
-type Parser<'t> = Parser<'t, UserState>
+type CharStream = CharStream<IndentationState>
+type Parser<'t> = Parser<'t, IndentationState>
 
 // If this function is called at the same index in the stream
 // where the function previously stopped, then the previously
@@ -68,7 +76,7 @@ let indentedMany1 (p: Parser<'t>) label : Parser<'t list> =
                 Reply(reply.Status, reply.Error) 
 
 
-let commonIdentifier: Parser<_, UserState> =
+let commonIdentifier: Parser<_, IndentationState> =
     let isAsciiIdStart    = fun c -> isAsciiLower c 
     let isAsciiIdContinue = fun c -> isAsciiLetter c || isDigit c || c = '_'
 
@@ -77,8 +85,24 @@ let commonIdentifier: Parser<_, UserState> =
                     isAsciiIdContinue = isAsciiIdContinue,
                     normalization = System.Text.NormalizationForm.FormKC,
                     normalizeBeforeValidation = true,
-                    allowAllNonAsciiCharsInPreCheck = true))
+                    allowAllNonAsciiCharsInPreCheck = true)) |>> CommonIdentifier
 
 let keyword str = pstring str >>? nextCharSatisfiesNot (fun c -> isLetter c || isDigit c) <?> str
 
 let str s = pstring s >>. spaces
+
+let builtInType = choice (builtInTypes |> List.map pstring) |>> TypeIdentifier
+
+let customType =
+    let isAsciiIdContinue = fun c -> isAsciiLetter c || isDigit c || c = '_'
+
+    identifier (IdentifierOptions(
+                    isAsciiIdStart = isAsciiUpper,
+                    isAsciiIdContinue = isAsciiIdContinue,
+                    normalization = System.Text.NormalizationForm.FormKC,
+                    normalizeBeforeValidation = true,
+                    allowAllNonAsciiCharsInPreCheck = true)) |>> TypeIdentifier
+
+let typeIdentifier: Parser<_, IndentationState> = spaces >>. choice [customType; builtInType] .>> spaces
+
+let punit: Parser<_, IndentationState> = parens spaces |>> fun _ -> ()

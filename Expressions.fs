@@ -38,7 +38,7 @@ let functionDefinitionParser: Parser<_, UserState> =
         (keyword "def" .>> spaces >>. commonIdentifier .>> spaces)
         (argumentListParser .>> spaces .>> pstring "->" .>> spaces)
         (expressionOrBlockParser)
-        (fun functionName arguments body -> { name = functionName; arguments = arguments; body = body })
+        (FunctionDefinition.mk)
 
 let valueBindingParser =
    // keyword "def" >>. (ws1 >>. identifier .>> wsBeforeEOL |>> Print)

@@ -5,7 +5,7 @@ open Statements
 open Common
 open Types
 
-let pimportTarget = commonIdentifier .>> spaces |>> ImportTarget
+let pimportTarget = between (pchar '"') (pchar '"') (manyChars (noneOf ['"'])) .>> spaces |>> ImportTarget
 
 let pimport =
     pipe2
@@ -18,6 +18,6 @@ let moduleDefinition =
         (keyword "module" .>> spaces >>. commonIdentifier .>> spaces)
         (opt pimport |>> function None -> [] | Some x -> x)
         (many definitionParser)
-        (fun name imports definitions -> { name = name; imports = imports; definitions = definitions })
+        ModuleDefinition.mk
 
-let document: Parser<_, UserState> = spaces >>. moduleDefinition .>> eof
+let document: Parser<_, IndentationState> = spaces >>. moduleDefinition .>> eof

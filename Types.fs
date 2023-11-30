@@ -1,37 +1,57 @@
 module Types
-type Identifier = string
+type CommonIdentifier = CommonIdentifier of string
+type TypeIdentifier = TypeIdentifier of string
 
 type Expression =
     | StringLiteral of string
     | IntLiteral of int
     | Block of Expression list
 
-type TypeExpression =
-    | BuiltInType of string
-    | CustomType of string
+type ObjectField = {
+    name: CommonIdentifier option
+    fieldType: TypeExpression
+} with
+    static member mk name value = { name = name; fieldType = value }
+
+and TypeExpression =
+    | Identifier of TypeIdentifier
+    | Tag of CommonIdentifier
     | Intersection of TypeExpression * TypeExpression
     | Union of TypeExpression * TypeExpression
     | FunctionType of TypeExpression * TypeExpression
     | TypeCall of TypeExpression * TypeExpression
-    | Tuple of TypeExpression list
+    | ObjectTuple of ObjectField list
     | Unit
 
 type FunctionArgument = {
-    name: string
+    name: CommonIdentifier
     argumentType: TypeExpression option 
-}
+} with
+    static member mk(name, argumentType) = { name = name; argumentType = argumentType }
 
-and VariableDefinition = { name: string; value: Block }
+and ValueDefinition = { 
+    name: CommonIdentifier
+    value: Block
+} with 
+    static member mk(name, value) = { name = name; value = value }
 
 and FunctionDefinition = { 
-    name: string
+    name: CommonIdentifier
     arguments: FunctionArgument list
     body: Block 
-}
+} with 
+    static member mk(name, arguments, body) = { name = name; arguments = arguments; body = body }
+
+and TypeDefinition = {
+    name: TypeIdentifier
+    value: TypeExpression 
+} with 
+        static member mk(name, value) = { name = name; value = value }
 
 and Definition = 
-    | V of VariableDefinition
-    | F of FunctionDefinition
+    | Val of ValueDefinition
+    | Func of FunctionDefinition
+    | Type of TypeDefinition
 
 and Statement = 
     | Def of Definition
@@ -41,7 +61,12 @@ and Block = Block of Statement list
 
 type ImportTarget = ImportTarget of string
 
-type ModuleDefinition = { name: string; imports: ImportTarget list; definitions: Definition list }
+type ModuleDefinition = { 
+    name: CommonIdentifier
+    imports: ImportTarget list
+    definitions: Definition list 
+} with
+    static member mk name imports definitions = { name = name; imports = imports; definitions = definitions }
 
 type LastParsedIndentation() =
     [<DefaultValue>]
@@ -49,7 +74,7 @@ type LastParsedIndentation() =
     [<DefaultValue>]
     val mutable EndIndex: int64
 
-type UserState = 
+type IndentationState = 
     {   Indentation: int
         // We put LastParsedIndentation into the UserState so that we 
         // can conveniently use a separate instance for each stream.

@@ -6,52 +6,51 @@ open TypeExpressions
 open Types
 
 
-let stringValueParser = between (pchar '"') (pchar '"') (manyChars (noneOf ['"'])) |>> StringLiteral
+let pstringLiteral = between (pchar '"') (pchar '"') (manyChars (noneOf ['"'])) |>> StringLiteral
 
-let intValueParser =
+let pintLiteral =
     many1Satisfy isDigit
     |>> int
     |>> IntLiteral
 
 
 let pexpression =
-    choice [attempt stringValueParser; intValueParser]
+    choice [attempt pstringLiteral; pintLiteral]
 
 let blockParser, blockParserRef = createParserForwardedToRef()
 
-let expressionOrBlockParser =
-    choice [blockParser]
-
-let functionArgument: Parser<_, UserState> = 
-    pipe2
-        (commonIdentifier)
+let functionArgument: Parser<_, IndentationState> = 
+    commonIdentifier .>> spaces .>>.
         (opt (pchar ':' .>> spaces >>. typeExpression))
-        (fun identifier argumentType -> {name = identifier; argumentType = argumentType})
+        |>> FunctionArgument.mk
 
-let argumentListParser: Parser<_, UserState> =
-    betweenBrackets (separatedByCommas functionArgument)
+let argumentListParser: Parser<_, IndentationState> =
+    parens (sepByCommas functionArgument)
 
-let functionDefinitionParser: Parser<_, UserState> =
+let functionDefinitionParser: Parser<_, IndentationState> =
     pipe3
         (keyword "def" .>> spaces >>. commonIdentifier .>> spaces)
         (argumentListParser .>> spaces .>> pstring "->" .>> spaces)
-        (expressionOrBlockParser)
-        (fun functionName arguments body -> { name = functionName; arguments = arguments; body = body })
+        (blockParser)
+        (fun x y z -> FunctionDefinition.mk(x, y, z))
 
 let valueBindingParser =
-   // keyword "def" >>. (ws1 >>. identifier .>> wsBeforeEOL |>> Print)
-    pipe3
-        (pstring "def" .>> spaces)
-        (manyChars (anyOf ['a' .. 'z']) .>> spaces)
-        (pchar '=' .>> spaces .>> opt newline >>. expressionOrBlockParser)
-        (fun _ varName value -> { name = varName; value = value })
+    (keyword "def" .>> spaces >>. commonIdentifier .>> spaces)
+    .>>. (pchar '=' .>> spaces .>> opt newline >>. blockParser)
+    |>> ValueDefinition.mk
 
-let definitionParser: Parser<_, UserState> =
+let typeDefinitionParser =
+    (keyword "type" .>> spaces >>. typeIdentifier .>> spaces)
+    .>>. (pchar '=' .>> spaces >>. typeExpression)
+    |>> TypeDefinition.mk
+
+let definitionParser: Parser<_, IndentationState> =
     choice [
-        attempt functionDefinitionParser |>> F
-        valueBindingParser |>> V
+        attempt functionDefinitionParser |>> Func
+        attempt typeDefinitionParser |>> Type
+        valueBindingParser |>> Val
     ]
 
 let pstatement = choice [attempt definitionParser |>> Def; pexpression |>> Expr]
 
-do blockParserRef := indentedMany1 pstatement "block" |>> Block .>> wsBeforeEOL
+do blockParserRef.Value <- indentedMany1 pstatement "block" |>> Block .>> wsBeforeEOL
