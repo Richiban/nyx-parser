@@ -15,13 +15,17 @@ let runParser p s =
 //     typeDefinitionParser
 //     "type A = (filename: string; mode: #readonly | #readwrite) -> ()"
 
-runParser 
-    typeDefinitionParser
-    "type OptionString = #none | (#some, string)"
+// runParser 
+//     typeDefinitionParser
+//     "type OptionString = #none | (#some, string)"
+
+// runParser
+//     typeParser
+//     "#none | (#some, string) -> ()"
 
 runParser
     typeParser
-    "#none | (#some, string) -> ()"
+    "(a:string) -> (string) -> (string, string)"
 
 
 // runParser 

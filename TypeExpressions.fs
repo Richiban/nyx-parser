@@ -4,43 +4,50 @@ open FParsec
 open Types
 open Common
 
-type TP = Parser<TypeExpression, IndentationState>
+module private TypeExpressions =
+  let typeParser, typeExpressionRef = createParserForwardedToRef()
 
-let (typeParser: TP), typeExpressionRef = createParserForwardedToRef()
+  let namedFieldParser =
+      sepByOp ":" commonIdentifier typeParser 
+      |>> NamedField
 
-let namedFieldParser =
-    sepByOp ":" commonIdentifier typeParser
+  let tupleParser =
+      parens (choice [
+        attempt <| sepByCommas1 namedFieldParser 
+        |>> Tuple
+        
+        typeParser .>> spaces .>> pchar ',' .>> spaces .>>. sepByCommas1 typeParser
+        |>> (fun (x, xs) -> Tuple (x::xs))
+      ])
 
-let objectTupleParser =
-    parens (sepByCommas1 typeParser)
-    |>> Tuple
+  // let typeCall = 
+  //   (typeExpression .>> spaces) .>>. (typeExpression .>> spaces)
+  //   |>> TypeCall
 
-// let typeCall = 
-//   (typeExpression .>> spaces) .>>. (typeExpression .>> spaces)
-//   |>> TypeCall
-
-let tag =
-  pstring "#" >>. commonIdentifier |>> Tag
-
-
-let atom = spaced <| choice [
-  typeIdentifier |>> Identifier
-  namedFieldParser |>> NamedField
-  tag
-]
+  let tag =
+    pstring "#" >>. commonIdentifier |>> Tag
 
 
-let ops = choice [
-    pstring "|" >>% (fun x y -> Union (x, y))
-    pstring "&" >>% (fun x y -> Intersection (x, y))
-    pstring "->" >>% (fun x y -> FunctionType (x, y))
-]
+  let typeTerm = spaced <| choice [
+    typeIdentifier |>> Identifier
+    namedFieldParser
+    tag
+  ]
 
-let term = choice [
-    attempt <| (spaced <| (pchar '(' .>> spaces .>> pchar ')') |>> (fun _ -> Unit))
-    attempt <| (spaced <| objectTupleParser)
-    attempt <| (spaced <| parens (spaced typeParser))
-    atom
-]
 
-do typeExpressionRef.Value <- chainl1 term ops
+  let typeOperators = choice [
+      pstring "|" >>% (fun x y -> Union (x, y))
+      pstring "&" >>% (fun x y -> Intersection (x, y))
+      pstring "->" >>% (fun x y -> FunctionType (x, y))
+  ]
+
+  let term = choice [
+      attempt <| (spaced <| (pchar '(' .>> spaces .>> pchar ')') |>> (fun _ -> Unit))
+      attempt <| (spaced <| tupleParser)
+      attempt <| (spaced <| parens (spaced typeParser))
+      typeTerm
+  ]
+
+  do typeExpressionRef.Value <- chainl1 term typeOperators
+
+let typeParser = TypeExpressions.typeParser
