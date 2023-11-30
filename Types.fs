@@ -20,7 +20,9 @@ and TypeExpression =
     | Union of TypeExpression * TypeExpression
     | FunctionType of TypeExpression * TypeExpression
     | TypeCall of TypeExpression * TypeExpression
-    | ObjectTuple of ObjectField list
+    //| ObjectTuple of (CommonIdentifier * TypeExpression) list
+    | NamedField of CommonIdentifier * TypeExpression
+    | Tuple of TypeExpression list
     | Unit
 
 type FunctionArgument = {

@@ -15,7 +15,7 @@ let sepByOp op p p' = p .>> spaces .>> pstring op .>> spaces .>>. p'
 
 let sepByCommas p = sepBy p (spaces >>. pchar ',' .>> spaces)
 
-let sepBySemis1 p = sepBy1 p (spaces >>. pchar ';' .>> spaces)
+let sepByCommas1 p = sepBy1 p (spaces >>. pchar ',' .>> spaces)
 
 let isBlank = function
     | ' ' | '\t' -> true

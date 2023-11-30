@@ -21,7 +21,7 @@ let blockParser, blockParserRef = createParserForwardedToRef()
 
 let functionArgument: Parser<_, IndentationState> = 
     commonIdentifier .>> spaces .>>.
-        (opt (pchar ':' .>> spaces >>. typeExpression))
+        (opt (pchar ':' .>> spaces >>. typeParser))
         |>> FunctionArgument.mk
 
 let argumentListParser: Parser<_, IndentationState> =
@@ -41,7 +41,7 @@ let valueBindingParser =
 
 let typeDefinitionParser =
     (keyword "type" .>> spaces >>. typeIdentifier .>> spaces)
-    .>>. (pchar '=' .>> spaces >>. typeExpression)
+    .>>. (pchar '=' .>> spaces >>. typeParser)
     |>> TypeDefinition.mk
 
 let definitionParser: Parser<_, IndentationState> =
