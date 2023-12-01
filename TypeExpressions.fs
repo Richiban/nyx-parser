@@ -12,27 +12,31 @@ module private TypeExpressions =
       |>> NamedField
 
   let tupleParser =
-      parens (choice [
+      (choice [
         attempt <| sepByCommas1 namedFieldParser 
         |>> Tuple
         
         typeParser .>> spaces .>> pchar ',' .>> spaces .>>. sepByCommas1 typeParser
         |>> (fun (x, xs) -> Tuple (x::xs))
       ])
+  
+  /// Requires the given parser to be surrounded by parentheses only if the parser state
+  /// is not already in parentheses
+  let parensNotDoubled (p: Parser<'t>) : Parser<_> =
+    fun stream ->
+        let inParens = stream.UserState.CurrentlyInParens
 
-  // let typeCall = 
-  //   (typeExpression .>> spaces) .>>. (typeExpression .>> spaces)
-  //   |>> TypeCall
+        if inParens then
+            stream.UserState <- {stream.UserState with CurrentlyInParens = false}
+            let reply = p stream
+            reply
+        else
+            stream.UserState <- {stream.UserState with CurrentlyInParens = true}
+            let reply = (parens p) stream
+            reply
 
   let tag =
     pstring "#" >>. commonIdentifier |>> Tag
-
-
-  let typeTerm = spaced <| choice [
-    typeIdentifier |>> Identifier
-    namedFieldParser
-    tag
-  ]
 
 
   let typeOperators = choice [
@@ -41,11 +45,15 @@ module private TypeExpressions =
       pstring "->" >>% (fun x y -> FunctionType (x, y))
   ]
 
-  let term = choice [
-      attempt <| (spaced <| (pchar '(' .>> spaces .>> pchar ')') |>> (fun _ -> Unit))
-      attempt <| (spaced <| tupleParser)
-      attempt <| (spaced <| parens (spaced typeParser))
-      typeTerm
+  let term = spaced <| choice [
+      attempt <| (typeIdentifier .>> spaces .>>. parensNotDoubled typeParser) |>> (fun (x, y) -> TypeCall(Identifier x, y))
+      attempt <| ((pchar '(' .>> spaces .>> pchar ')') |>> (fun _ -> Unit))
+      attempt <| (parensNotDoubled tupleParser)
+      attempt <| (parens (spaced typeParser))
+      
+      attempt typeIdentifier |>> Identifier
+      attempt namedFieldParser
+      tag
   ]
 
   do typeExpressionRef.Value <- chainl1 term typeOperators

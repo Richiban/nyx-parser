@@ -19,15 +19,15 @@ let pexpression =
 
 let blockParser, blockParserRef = createParserForwardedToRef()
 
-let functionArgument: Parser<_, IndentationState> = 
+let functionArgument: Parser<_, ParserState> = 
     commonIdentifier .>> spaces .>>.
         (opt (pchar ':' .>> spaces >>. typeParser))
         |>> FunctionArgument.mk
 
-let argumentListParser: Parser<_, IndentationState> =
+let argumentListParser: Parser<_, ParserState> =
     parens (sepByCommas functionArgument)
 
-let functionDefinitionParser: Parser<_, IndentationState> =
+let functionDefinitionParser: Parser<_, ParserState> =
     pipe3
         (keyword "def" .>> spaces >>. commonIdentifier .>> spaces)
         (argumentListParser .>> spaces .>> pstring "->" .>> spaces)
@@ -44,7 +44,7 @@ let typeDefinitionParser =
     .>>. (pchar '=' .>> spaces >>. typeParser)
     |>> TypeDefinition.mk
 
-let definitionParser: Parser<_, IndentationState> =
+let definitionParser: Parser<_, ParserState> =
     choice [
         attempt functionDefinitionParser |>> Func
         attempt typeDefinitionParser |>> Type

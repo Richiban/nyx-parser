@@ -20,4 +20,4 @@ let moduleDefinition =
         (many definitionParser)
         ModuleDefinition.mk
 
-let document: Parser<_, IndentationState> = spaces >>. moduleDefinition .>> eof
+let document: Parser<_, ParserState> = spaces >>. moduleDefinition .>> eof

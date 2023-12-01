@@ -8,12 +8,12 @@ open Modules
 open Statements
 
 let runParser p s = 
-    runParserOnString (p .>> spaces .>> eof) (IndentationState.Create()) "" s
+    runParserOnString (p .>> spaces .>> eof) (ParserState.Create()) "" s
     |> printfn "%A"
 
 // runParser 
 //     typeDefinitionParser
-//     "type A = (filename: string; mode: #readonly | #readwrite) -> ()"
+//     "type A = (filename: string, mode: #readonly | #readwrite) -> ()"
 
 // runParser 
 //     typeDefinitionParser
@@ -25,7 +25,24 @@ let runParser p s =
 
 runParser
     typeParser
-    "(a:string) -> (string) -> (string, string)"
+    "string -> list(string, int)"
+    
+
+runParser
+    typeParser
+    "string -> list(string)"
+
+runParser
+    typeParser
+    "string -> list string" // This _should_ fail
+
+runParser
+    typeParser
+    "string -> (string)"
+
+runParser
+    typeParser
+    "(((string)))"
 
 
 // runParser 

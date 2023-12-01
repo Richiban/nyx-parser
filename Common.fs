@@ -21,12 +21,12 @@ let isBlank = function
     | ' ' | '\t' -> true
     | _ -> false
 
-let comment: Parser<_, IndentationState> = pstring "--" >>. skipRestOfLine false
+let comment: Parser<_, ParserState> = pstring "--" >>. skipRestOfLine false
 
 let wsBeforeEOL = skipManySatisfy isBlank >>. optional comment
 
-type CharStream = CharStream<IndentationState>
-type Parser<'t> = Parser<'t, IndentationState>
+type CharStream = CharStream<ParserState>
+type Parser<'t> = Parser<'t, ParserState>
 
 // If this function is called at the same index in the stream
 // where the function previously stopped, then the previously
@@ -76,7 +76,7 @@ let indentedMany1 (p: Parser<'t>) label : Parser<'t list> =
                 Reply(reply.Status, reply.Error) 
 
 
-let commonIdentifier: Parser<_, IndentationState> =
+let commonIdentifier: Parser<_, ParserState> =
     let isAsciiIdStart    = fun c -> isAsciiLower c 
     let isAsciiIdContinue = fun c -> isAsciiLetter c || isDigit c || c = '_'
 
@@ -103,6 +103,6 @@ let customType =
                     normalizeBeforeValidation = true,
                     allowAllNonAsciiCharsInPreCheck = true)) |>> TypeIdentifier
 
-let typeIdentifier: Parser<_, IndentationState> = spaces >>. choice [customType; builtInType] .>> spaces
+let typeIdentifier: Parser<_, ParserState> = spaces >>. choice [customType; builtInType] .>> spaces
 
-let punit: Parser<_, IndentationState> = parens spaces |>> fun _ -> ()
+let punit: Parser<_, ParserState> = parens spaces |>> fun _ -> ()
