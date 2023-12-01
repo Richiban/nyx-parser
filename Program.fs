@@ -11,17 +11,17 @@ let runParser p s =
     runParserOnString (p .>> spaces .>> eof) (ParserState.Create()) "" s
     |> printfn "%A"
 
-// runParser 
-//     typeDefinitionParser
-//     "type A = (filename: string, mode: #readonly | #readwrite) -> ()"
+runParser 
+    typeDefinitionParser
+    "type A = (filename: string, mode: #readonly | #readwrite) -> ()"
 
-// runParser 
-//     typeDefinitionParser
-//     "type OptionString = #none | (#some, string)"
+runParser 
+    typeDefinitionParser
+    "type OptionString = (#none | (#some, string))"
 
-// runParser
-//     typeParser
-//     "#none | (#some, string) -> ()"
+runParser
+    typeParser
+    "#none | (#some, string) -> ()"
 
 runParser
     typeParser

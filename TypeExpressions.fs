@@ -38,22 +38,31 @@ module private TypeExpressions =
   let tag =
     pstring "#" >>. commonIdentifier |>> Tag
 
-
   let typeOperators = choice [
       pstring "|" >>% (fun x y -> Union (x, y))
       pstring "&" >>% (fun x y -> Intersection (x, y))
       pstring "->" >>% (fun x y -> FunctionType (x, y))
   ]
 
+  let typeCallParser = 
+    typeIdentifier .>> spaces .>>. parensNotDoubled typeParser 
+    |>> fun (x, y) -> TypeCall(Identifier x, y)
+
+  let unitTypeParser = 
+    pchar '(' .>> spaces .>> pchar ')' 
+    |>> (fun _ -> Unit)
+
+  let identifierTypeParser =
+    attempt typeIdentifier |>> Identifier
+
   let term = spaced <| choice [
-      attempt <| (typeIdentifier .>> spaces .>>. parensNotDoubled typeParser) |>> (fun (x, y) -> TypeCall(Identifier x, y))
-      attempt <| ((pchar '(' .>> spaces .>> pchar ')') |>> (fun _ -> Unit))
-      attempt <| (parensNotDoubled tupleParser)
-      attempt <| (parens (spaced typeParser))
-      
-      attempt typeIdentifier |>> Identifier
-      attempt namedFieldParser
       tag
+      attempt typeCallParser
+      attempt unitTypeParser
+      attempt <| parensNotDoubled tupleParser
+      attempt <| parens (spaced typeParser)      
+      attempt identifierTypeParser
+      attempt namedFieldParser
   ]
 
   do typeExpressionRef.Value <- chainl1 term typeOperators
