@@ -1,6 +1,8 @@
 module Types
+
 type CommonIdentifier = CommonIdentifier of string
 type TypeIdentifier = TypeIdentifier of string
+type ModuleIdentifier = ModuleIdentifier of string
 
 type Expression =
     | StringLiteral of string
@@ -62,10 +64,11 @@ and Statement =
 and Block = Block of Statement list
 
 type ImportTarget = ImportTarget of string
+type ImportSection = ImportSection of ImportTarget list
 
 type ModuleDefinition = { 
-    name: CommonIdentifier
-    imports: ImportTarget list
+    name: ModuleIdentifier
+    imports: ImportSection option
     definitions: Definition list 
 } with
     static member mk name imports definitions = { name = name; imports = imports; definitions = definitions }

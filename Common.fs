@@ -105,4 +105,14 @@ let customType =
 
 let typeIdentifier: Parser<_, ParserState> = spaces >>. choice [customType; builtInType] .>> spaces
 
+let moduleIdentifier: Parser<_, ParserState> =
+    let isAsciiIdContinue = fun c -> isAsciiLetter c || isDigit c || c = '_'
+
+    identifier (IdentifierOptions(
+                isAsciiIdStart = isAsciiUpper,
+                isAsciiIdContinue = isAsciiIdContinue,
+                normalization = System.Text.NormalizationForm.FormKC,
+                normalizeBeforeValidation = true,
+                allowAllNonAsciiCharsInPreCheck = true)) |>> ModuleIdentifier
+
 let punit: Parser<_, ParserState> = parens spaces |>> fun _ -> ()
