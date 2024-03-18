@@ -1,23 +1,14 @@
-module Tests
+module NyxParser.Tests.TypeExpressions
 
 open NUnit.Framework
 
 open FParsec
-open Types
-open Common
-open TypeExpressions
-open Modules 
-open Statements
-
-let runParser p s = 
-    match runParserOnString (p .>> spaces .>> eof) (ParserState.Create()) "" s with
-    | Success (a, _, _) -> a
-    | Failure (a, _, _) -> failwith a
-
-let runFailingParser p s =
-    match runParserOnString (p .>> spaces .>> eof) (ParserState.Create()) "" s with
-    | Success (_, _, _) -> failwith "Expected parser to fail"
-    | Failure (a, _, _) -> a
+open NyxParser.Types
+open NyxParser.Common
+open NyxParser.TypeExpressions
+open NyxParser.Modules 
+open NyxParser.Statements
+open NyxParser.Tests.Utils
 
 [<SetUp>]
 let Setup () =
@@ -183,9 +174,7 @@ let Test9() =
 [<Test>]
 let Test10() =
     let actual = 
-        runParser
-            moduleParser
-            @"module Test
+        runParser moduleParser @"module Test
 
 import
     ""test1""

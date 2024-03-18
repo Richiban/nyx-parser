@@ -1,7 +1,7 @@
-module Common
+module NyxParser.Common
 
 open FParsec
-open Types
+open NyxParser.Types
 
 let tabStopDistance = 8 // must be a power of 2
 

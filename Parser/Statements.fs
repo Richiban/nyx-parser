@@ -1,9 +1,9 @@
-module Statements
+module NyxParser.Statements
 
 open FParsec
-open Common
-open TypeExpressions
-open Types
+open NyxParser.Common
+open NyxParser.TypeExpressions
+open NyxParser.Types
 
 
 let pstringLiteral = between (pchar '"') (pchar '"') (manyChars (noneOf ['"'])) |>> StringLiteral

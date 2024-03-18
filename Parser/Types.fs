@@ -1,4 +1,4 @@
-module Types
+module NyxParser.Types
 
 type CommonIdentifier = CommonIdentifier of string
 type TypeIdentifier = TypeIdentifier of string

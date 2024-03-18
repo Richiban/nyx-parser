@@ -1,8 +1,8 @@
-module TypeExpressions
+module NyxParser.TypeExpressions
 
 open FParsec
-open Types
-open Common
+open NyxParser.Types
+open NyxParser.Common
 
 module private TypeExpressions =
   let typeParser, typeExpressionRef = createParserForwardedToRef()

@@ -1,9 +1,9 @@
-module Modules
+module NyxParser.Modules
 
 open FParsec
-open Statements
-open Common
-open Types
+open NyxParser.Statements
+open NyxParser.Common
+open NyxParser.Types
 
 let isBlank = fun c -> c = ' ' || c = '\t'
 //let ws1 = skipMany1SatisfyL isBlank "whitespace"
