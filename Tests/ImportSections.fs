@@ -6,20 +6,14 @@ open NyxParser.Modules
 open NyxParser.Types
 open NyxParser.Tests.Utils
 
-
-[<SetUp>]
-let Setup () =
-    ()
-
-
 [<Test>]
 let ``Test imports``() =
     let actual =
         runParser 
             importSectionParser
             @"import 
-            ""test1""
-            ""test2""
+    ""test1""
+    ""test2""
         "
 
     let expected =

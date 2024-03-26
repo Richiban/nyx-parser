@@ -6,7 +6,12 @@ open NyxParser.TypeExpressions
 open NyxParser.Types
 
 
-let pstringLiteral = between (pchar '"') (pchar '"') (manyChars (noneOf ['"'])) |>> StringLiteral
+let pstringLiteral = 
+    between 
+        (pchar '"') 
+        (pchar '"') 
+        (manyChars (noneOf ['"'])) 
+    |>> StringLiteral
 
 let pintLiteral =
     many1Satisfy isDigit
@@ -36,7 +41,8 @@ let functionDefinitionParser: Parser<_, ParserState> =
 
 let valueBindingParser =
     (keyword "def" .>> spaces >>. commonIdentifier .>> spaces)
-    .>>. (pchar '=' .>> spaces .>> opt newline >>. blockParser)
+    .>> (pchar '=' .>> spaces .>> opt newline)
+    .>>. blockParser
     |>> ValueDefinition.mk
 
 let typeDefinitionParser =

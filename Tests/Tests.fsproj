@@ -7,6 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Utils.fs" />
+    <Compile Include="FunctionDefinitions.fs" />
     <Compile Include="ModuleDefinitions.fs" />
     <Compile Include="TypeExpressions.fs" />
     <Compile Include="ImportSections.fs" />

@@ -2,17 +2,9 @@ module NyxParser.Tests.Types
 
 open NUnit.Framework
 
-open FParsec
 open NyxParser.Types
-open NyxParser.Common
 open NyxParser.TypeExpressions
-open NyxParser.Modules 
-open NyxParser.Statements
 open NyxParser.Tests.Utils
-
-[<SetUp>]
-let Setup () =
-    ()
 
 [<Test>]
 let ``Test a type call in a function``() =
@@ -22,9 +14,13 @@ let ``Test a type call in a function``() =
             "string -> list(string)"
 
     let expected =
-        FunctionType
-            (Identifier (TypeIdentifier "string"), 
-             TypeCall (Identifier (TypeIdentifier "list"), Identifier (TypeIdentifier "string")))
+        FunctionType (
+            Identifier (TypeIdentifier "string"), 
+            TypeCall (
+                Identifier (TypeIdentifier "list"),
+                Identifier (TypeIdentifier "string")
+            )
+        )
     
     Assert.AreEqual(expected, actual)
 
@@ -46,11 +42,26 @@ let ``Failure: Testing attempted typecall without parens`` () =
     Assert.AreEqual(expected, actual)
 
 [<Test>]
-let ``Test simple function type``() =
+let ``Test simple function type with extra parens``() =
     let actual = 
         runParser
             typeParser
             "string -> (string)"
+
+    let expected =
+        FunctionType
+            (Identifier (TypeIdentifier "string"), 
+             Identifier (TypeIdentifier "string"))
+
+    Assert.AreEqual(expected, actual)
+
+
+[<Test>]
+let ``Test simple function type``() =
+    let actual = 
+        runParser
+            typeParser
+            "string -> string"
 
     let expected =
         FunctionType
